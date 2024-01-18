@@ -1,0 +1,8 @@
+[package]
+name = "ow_my_balls"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rapier2d = "0.17.2"
+raylib = "3.7.0"
