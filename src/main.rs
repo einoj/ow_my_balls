@@ -1,5 +1,6 @@
 use rapier2d::prelude::*;
 use raylib::prelude::*;
+use raylib::ffi::MouseButton::MOUSE_LEFT_BUTTON;
 
 const LINE_WIDTH: i32 = 15;
 const TILE_SIZE: i32 = 40;
@@ -100,6 +101,16 @@ fn main() {
                 &physics_hooks,
                 &event_handler,
                 );
+            if rl.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
+                let rigid_body = RigidBodyBuilder::dynamic()
+                    .translation(vector![rl.get_mouse_x() as f32/TILE_SIZE_F-0.5,
+                                 rl.get_mouse_y() as f32/TILE_SIZE_F-0.5])
+                    .linvel(vector![0.0, 80.0])
+                    .build();
+                let collider = ColliderBuilder::ball(0.2).restitution(0.9).density(50.0).build();
+                let ball_body_handle = rigid_body_set.insert(rigid_body);
+                collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
+            }
             let mut d = rl.begin_drawing(&thread);
             d.clear_background(Color::BLACK);
             render_world(&mut d);
