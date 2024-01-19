@@ -2,31 +2,34 @@ use rapier2d::prelude::*;
 use raylib::prelude::*;
 use raylib::ffi::MouseButton::MOUSE_LEFT_BUTTON;
 
-const LINE_WIDTH: i32 = 15;
-const TILE_SIZE: i32 = 40;
-const TILE_SIZE_F: f32 = TILE_SIZE as f32;
+const SCALE_FACTOR: f32 = 40.0;
+const WINDOW_HEIGHT: i32 = 600;
+const WINDOW_HEIGHT_F: f32 = WINDOW_HEIGHT as f32;
+const WINDOW_WIDTH: i32 = 1500;
+const WINDOW_WIDTH_F: f32 = WINDOW_WIDTH as f32;
 
 const GROUND_H: f32 = 1.0;
-const GROUND_W: f32 = 100.0;
+const GROUND_W: f32 = 40.0;
+const WALL_WIDTH: f32 = 15.0;
 
 fn render_2d_player(d: &mut RaylibDrawHandle, position: Vector2, color: Color) {
     d.draw_circle_v(
-        position.scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
-        0.2*TILE_SIZE as f32, color);
+        position.scale_by(WINDOW_HEIGHT_F/15.0),
+        WINDOW_HEIGHT_F/75.0, color);
 }
 
 fn render_world(d: &mut RaylibDrawHandle) {
     d.draw_rectangle_v(
-        Vector2::new(0.0,LINE_WIDTH as f32).scale_by(TILE_SIZE_F)-TILE_SIZE_F/2.0,
-        Vector2::new(GROUND_W, GROUND_H).scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
+        Vector2::new(0.0,WINDOW_HEIGHT_F-SCALE_FACTOR),
+        Vector2::new(WINDOW_WIDTH_F, GROUND_W),
         Color::ORANGE);
     d.draw_rectangle_v(
         Vector2::new(0.0,0.0),
-        Vector2::new(0.2, TILE_SIZE_F).scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
+        Vector2::new(WALL_WIDTH/2.0, WINDOW_HEIGHT_F),
         Color::ORANGE);
     d.draw_rectangle_v(
-        Vector2::new(TILE_SIZE_F-3.7,-1.0).scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
-        Vector2::new(0.2, TILE_SIZE_F).scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
+        Vector2::new(WINDOW_WIDTH_F - WALL_WIDTH/2.0,0.0),
+        Vector2::new(WALL_WIDTH/2.0, WINDOW_HEIGHT_F),
         Color::ORANGE);
 }
 
@@ -35,14 +38,15 @@ fn main() {
     let mut collider_set = ColliderSet::new();
 
     /* Create the ground. */
-    let collider = ColliderBuilder::cuboid(GROUND_W, GROUND_H)
-       .translation(vector![0.0, LINE_WIDTH as f32])
+    let collider = ColliderBuilder::cuboid(WINDOW_WIDTH_F, GROUND_H)
+       .translation(vector![0.0, WINDOW_HEIGHT_F/SCALE_FACTOR])
        .build();
     /* walls */
-    let collider_wall_l = ColliderBuilder::cuboid(0.2, TILE_SIZE_F)
+    let collider_wall_l = ColliderBuilder::cuboid(0.2, 1000.0)
+       .translation(vector![0.0, -1.0])
        .build();
-    let collider_wall_r = ColliderBuilder::cuboid(0.2, TILE_SIZE_F)
-       .translation(vector![TILE_SIZE_F-3.5, 0.0])
+    let collider_wall_r = ColliderBuilder::cuboid(0.2, 1000.0)
+       .translation(vector![WINDOW_WIDTH_F/SCALE_FACTOR, 0.0])
        .build();
         
     collider_set.insert(collider);
@@ -52,7 +56,7 @@ fn main() {
     /* Create the bouncing ball. */
     for i in 0..9001 {
         let rigid_body = RigidBodyBuilder::dynamic()
-            .translation(vector![LINE_WIDTH as f32+0.0001*i as f32, 0.0-i as f32])
+            .translation(vector![WALL_WIDTH+0.0001*i as f32, 0.0-i as f32])
             .build();
         let collider = ColliderBuilder::ball(0.2).restitution(0.9).build();
         let ball_body_handle = rigid_body_set.insert(rigid_body);
@@ -72,11 +76,8 @@ fn main() {
     let physics_hooks = ();
     let event_handler = ();
 
-    /* raylib stuff */
-    let window_length: i32 = LINE_WIDTH*TILE_SIZE;
-    let window_width: i32 = window_length + (LINE_WIDTH * 60);
     let (mut rl, thread) = raylib::init()
-        .size(window_width, window_length)
+        .size(WINDOW_WIDTH, WINDOW_HEIGHT)
         .title("bouncy ball")
         .build();
 
@@ -101,10 +102,10 @@ fn main() {
                 &physics_hooks,
                 &event_handler,
                 );
-            if rl.is_mouse_button_pressed(MOUSE_LEFT_BUTTON) {
+            if rl.is_mouse_button_down(MOUSE_LEFT_BUTTON) {
                 let rigid_body = RigidBodyBuilder::dynamic()
-                    .translation(vector![rl.get_mouse_x() as f32/TILE_SIZE_F-0.5,
-                                 rl.get_mouse_y() as f32/TILE_SIZE_F-0.5])
+                    .translation(vector![rl.get_mouse_x() as f32/SCALE_FACTOR,
+                                 rl.get_mouse_y() as f32/SCALE_FACTOR])
                     .linvel(vector![0.0, 80.0])
                     .user_data(42)
                     .build();
@@ -119,7 +120,7 @@ fn main() {
                 let ball_body = &rigid_body_set[*handle];
                 let color: Color = match ball_body.user_data {
                     42 => Color::BLUE,
-                    _ => Color::ORANGE,
+                    _ => Color::RED,
                 };
                 render_2d_player(&mut d, Vector2::new(
                         ball_body.translation().x, ball_body.translation().y),
