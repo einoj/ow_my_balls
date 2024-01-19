@@ -9,10 +9,10 @@ const TILE_SIZE_F: f32 = TILE_SIZE as f32;
 const GROUND_H: f32 = 1.0;
 const GROUND_W: f32 = 100.0;
 
-fn render_2d_player(d: &mut RaylibDrawHandle, position: Vector2) {
+fn render_2d_player(d: &mut RaylibDrawHandle, position: Vector2, color: Color) {
     d.draw_circle_v(
         position.scale_by(TILE_SIZE_F)+TILE_SIZE_F/2.0,
-        0.2*TILE_SIZE as f32, Color::ORANGE);
+        0.2*TILE_SIZE as f32, color);
 }
 
 fn render_world(d: &mut RaylibDrawHandle) {
@@ -106,8 +106,9 @@ fn main() {
                     .translation(vector![rl.get_mouse_x() as f32/TILE_SIZE_F-0.5,
                                  rl.get_mouse_y() as f32/TILE_SIZE_F-0.5])
                     .linvel(vector![0.0, 80.0])
+                    .user_data(42)
                     .build();
-                let collider = ColliderBuilder::ball(0.2).restitution(0.9).density(50.0).build();
+                let collider = ColliderBuilder::ball(0.2).restitution(0.9).mass(50.0).build();
                 let ball_body_handle = rigid_body_set.insert(rigid_body);
                 collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
             }
@@ -116,8 +117,13 @@ fn main() {
             render_world(&mut d);
             for handle in island_manager.active_dynamic_bodies() {
                 let ball_body = &rigid_body_set[*handle];
+                let color: Color = match ball_body.user_data {
+                    42 => Color::BLUE,
+                    _ => Color::ORANGE,
+                };
                 render_2d_player(&mut d, Vector2::new(
-                        ball_body.translation().x, ball_body.translation().y));
+                        ball_body.translation().x, ball_body.translation().y),
+                        color);
             }
         }
     }
