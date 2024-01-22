@@ -6,4 +6,3 @@ edition = "2021"
 [dependencies]
 macroquad = "0.4.4"
 rapier2d = { version = "0.17.2", features = ["parallel"] }
-raylib = "3.7.0"

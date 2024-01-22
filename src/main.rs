@@ -94,6 +94,18 @@ async fn main() {
             &physics_hooks,
             &event_handler,
             );
+        if is_mouse_button_down(MouseButton::Left) {
+            let (mouse_x, mouse_y) = mouse_position();
+            let rigid_body = RigidBodyBuilder::dynamic()
+                .translation(vector![mouse_x as f32/SCALE_FACTOR,
+                mouse_y as f32/SCALE_FACTOR])
+                .linvel(vector![0.0, 80.0])
+                .user_data(42)
+                .build();
+            let collider = ColliderBuilder::ball(0.2).restitution(0.9).mass(50.0).build();
+            let ball_body_handle = rigid_body_set.insert(rigid_body);
+            collider_set.insert_with_parent(collider, ball_body_handle, &mut rigid_body_set);
+        }
         clear_background(BLACK);
         render_world();
         for handle in island_manager.active_dynamic_bodies() {
@@ -104,5 +116,6 @@ async fn main() {
             };
             render_ball(ball_body.translation().x, ball_body.translation().y, color);
         }
+        next_frame().await
     }
 }
